@@ -91,7 +91,7 @@ export function updateGame(deltaTime: number, canvasWidth: number, canvasHeight:
     }
 
     // Check for rest screen
-    if (gameState.playTime >= GAME_CONSTANTS.REST_SCREEN_TRIGGER_TIME) {
+    if (gameState.playTime >= GAME_CONSTANTS.BREAK_SCENE_INTERVAL) {
         gameState.showRestScreen = true
         gameState.paused = true
     }

@@ -8,7 +8,8 @@ export const GAME_CONSTANTS = {
     SCORE_PER_NEAR_MISS: 100,
     COMBO_MULTIPLIER_STEP: 5,
     MAX_MULTIPLIER: 5,
-    REST_SCREEN_TRIGGER_TIME: 60, // seconds
+    BREAK_SCENE_INTERVAL: 120, // 2 minutes in seconds
+    BREAK_SCENE_DURATION: 10,  // 10 seconds
     DIFFICULTY_SPEED_INCREMENT: 0.1,
     DIFFICULTY_SCORE_STEP: 500,
     CANVAS_TARGET_WIDTH: 450,
@@ -64,3 +65,36 @@ export const STORAGE_KEYS = {
     HIGH_SCORE: "traffic_game_highscore",
     HIGH_SCORES_LIST: "conduce-seguro-highscores"
 } as const;
+
+export const SAFETY_TIPS = [
+    {
+        title: "Distancia de Seguridad",
+        text: "Mantén siempre una distancia prudente. ¡Te da tiempo a reaccionar!",
+        icon: "🚗 ↔️ 🚗"
+    },
+    {
+        title: "Cinturón de Seguridad",
+        text: "El cinturón salva vidas. Abróchalo antes de arrancar.",
+        icon: "🛡️"
+    },
+    {
+        title: "Señales de Tránsito",
+        text: "Respetar las señales no es opcional, es vital para todos.",
+        icon: "🛑"
+    },
+    {
+        title: "Cero Distracciones",
+        text: "El celular puede esperar. Tu vida y la de los demás, no.",
+        icon: "📱 🚫"
+    },
+    {
+        title: "Límites de Velocidad",
+        text: "Correr no te hace llegar antes, te pone en peligro.",
+        icon: "⚡ 🚫"
+    },
+    {
+        title: "Paso de Peatones",
+        text: "Recuerda: el peatón siempre tiene la prioridad.",
+        icon: "🚶"
+    }
+] as const;

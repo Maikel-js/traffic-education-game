@@ -7,7 +7,7 @@
 	import GameOverScreen from "$lib/components/GameOverScreen.svelte";
 	import TriviaModal from "$lib/components/TriviaModal.svelte";
 	import MobileControls from "$lib/components/MobileControls.svelte";
-	import RestScreen from "$lib/components/RestScreen.svelte";
+	import EducationBreak from "$lib/components/EducationBreak.svelte";
 	import ScoreEffects from "$lib/components/ScoreEffects.svelte";
 	import {
 		gameState,
@@ -88,7 +88,7 @@
 		{/if}
 
 		{#if gameState.showRestScreen}
-			<RestScreen />
+			<EducationBreak />
 		{/if}
 
 		{#if showTrivia && currentTrivia}
