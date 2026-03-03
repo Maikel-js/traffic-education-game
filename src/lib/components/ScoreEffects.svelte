@@ -10,13 +10,16 @@
     {#each scoreEvents as event (event.id)}
         <div
             class="score-effect {event.type}"
-            style="left: {event.x}px; top: {event.y}px;"
+            style="left: {event.x}px; top: {event.y}px; --event-color: {event.color ||
+                '#ffca32'};"
             in:fly={{ y: -50, duration: 800 }}
             out:fade={{ duration: 200 }}
         >
-            <span class="points">+{event.points}</span>
-            {#if event.type === "near-miss"}
-                <span class="label">NEAR MISS!</span>
+            <span class="points" style="color: var(--event-color);"
+                >+{event.points}</span
+            >
+            {#if event.label || event.type === "near-miss"}
+                <span class="label">{event.label || "NEAR MISS!"}</span>
             {/if}
             {#if event.multiplier && event.multiplier > 1}
                 <span class="multiplier">x{event.multiplier}</span>

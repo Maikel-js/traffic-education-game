@@ -1,8 +1,11 @@
 import { gameState, getLanePositions } from "$lib/stores/game-state.svelte"
+import { POWERUP_CONSTANTS, SIGN_TYPES } from "../constants"
+import type { TrafficSignType } from "../types"
 
 class SpawnManager {
   private spawnTimer = 0
   private triviaTimer = 0
+  private signTimer = 0
   private lastTriviaTime = 0
 
   update(deltaTime: number, canvasWidth: number) {
@@ -10,6 +13,7 @@ class SpawnManager {
 
     this.spawnTimer += dt
     this.triviaTimer += dt
+    this.signTimer += dt
 
     const spawnInterval = 20
     if (this.spawnTimer > spawnInterval) {
@@ -18,6 +22,34 @@ class SpawnManager {
         this.spawnEnemy(canvasWidth)
       }
     }
+
+    const signInterval = 100
+    if (this.signTimer > signInterval) {
+      this.signTimer = 0
+      if (Math.random() < POWERUP_CONSTANTS.SPAWN_CHANCE) {
+        this.spawnSign(canvasWidth)
+      }
+    }
+  }
+
+  private spawnSign(canvasWidth: number) {
+    if (gameState.signs.length > 5) return
+
+    const lane = Math.floor(Math.random() * 5)
+    const lanePositions = getLanePositions(canvasWidth)
+
+    const signTypes = Object.keys(SIGN_TYPES) as TrafficSignType[]
+    const type = signTypes[Math.floor(Math.random() * signTypes.length)]
+
+    gameState.signs.push({
+      id: crypto.randomUUID(),
+      type,
+      lane,
+      x: lanePositions[lane] - 25,
+      y: -100,
+      width: 50,
+      height: 50,
+    })
   }
 
   private spawnEnemy(canvasWidth: number) {

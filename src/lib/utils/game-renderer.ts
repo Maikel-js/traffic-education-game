@@ -1,4 +1,5 @@
 import { gameState, getLanePositions } from "$lib/stores/game-state.svelte"
+import { SIGN_TYPES } from "../constants"
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
   const width = canvas.width
@@ -45,6 +46,11 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElem
 
   const lanePositions = getLanePositions(width)
 
+  // Draw signs
+  for (const sign of gameState.signs) {
+    drawSign(ctx, sign)
+  }
+
   for (const enemy of gameState.enemies) {
     const x = lanePositions[enemy.lane] - enemy.width / 2
     drawCar(ctx, x, enemy.y, enemy.width, enemy.height, enemy.color)
@@ -63,6 +69,16 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElem
     ctx.setLineDash([10, 5])
     ctx.strokeRect(playerX - 5, playerY - 5, gameState.player.width + 10, gameState.player.height + 10)
     ctx.setLineDash([])
+    ctx.restore()
+  }
+
+  if (gameState.slowMoTimer > 0) {
+    ctx.save()
+    ctx.fillStyle = "rgba(52, 152, 219, 0.15)"
+    ctx.fillRect(0, 0, width, height)
+    ctx.strokeStyle = "rgba(52, 152, 219, 0.5)"
+    ctx.lineWidth = 8
+    ctx.strokeRect(4, 4, width - 8, height - 8)
     ctx.restore()
   }
 }
@@ -230,4 +246,62 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
   ctx.lineTo(x, y + radius)
   ctx.quadraticCurveTo(x, y, x + radius, y)
   ctx.closePath()
+}
+
+function drawSign(ctx: CanvasRenderingContext2D, sign: any) {
+  const signData = SIGN_TYPES[sign.type as keyof typeof SIGN_TYPES];
+  if (!signData) return;
+
+  ctx.save();
+
+  // Shadow
+  ctx.fillStyle = "rgba(0,0,0,0.2)";
+  ctx.beginPath();
+  ctx.ellipse(sign.x + sign.width / 2 + 2, sign.y + sign.height + 30, 15, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Post
+  ctx.fillStyle = "#95a5a6";
+  ctx.fillRect(sign.x + sign.width / 2 - 2, sign.y + sign.height / 2, 4, 30);
+
+  // Plate
+  ctx.fillStyle = signData.color;
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+
+  if (sign.type === 'stop') {
+    const r = sign.width / 2;
+    const cx = sign.x + r;
+    const cy = sign.y + r;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI) / 4 + Math.PI / 8;
+      ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else if (sign.type === 'yield') {
+    ctx.beginPath();
+    ctx.moveTo(sign.x, sign.y);
+    ctx.lineTo(sign.x + sign.width, sign.y);
+    ctx.lineTo(sign.x + sign.width / 2, sign.y + sign.height);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(sign.x + sign.width / 2, sign.y + sign.height / 2, sign.width / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Symbol
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(signData.symbol, sign.x + sign.width / 2, sign.y + sign.height / 2);
+
+  ctx.restore();
 }

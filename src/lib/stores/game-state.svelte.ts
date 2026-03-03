@@ -17,6 +17,7 @@ export const gameState = $state<GameState>({
         height: 110,
     },
     enemies: [],
+    signs: [],
     roadOffset: 0,
     lives: GAME_CONSTANTS.INITIAL_LIVES,
     score: 0,
@@ -26,6 +27,7 @@ export const gameState = $state<GameState>({
     scoreEvents: [],
     invincible: false,
     invincibleTimer: 0,
+    slowMoTimer: 0,
     playTime: 0,
     showRestScreen: false,
 });
@@ -42,6 +44,7 @@ export function resetGame() {
         height: 110,
     };
     gameState.enemies = [];
+    gameState.signs = [];
     gameState.roadOffset = 0;
     gameState.lives = GAME_CONSTANTS.INITIAL_LIVES;
     gameState.score = 0;
@@ -50,6 +53,7 @@ export function resetGame() {
     gameState.scoreEvents = [];
     gameState.invincible = false;
     gameState.invincibleTimer = 0;
+    gameState.slowMoTimer = 0;
     gameState.playTime = 0;
     gameState.showRestScreen = false;
 }
@@ -74,10 +78,17 @@ function checkCollision(
 export function updateGame(deltaTime: number, canvasWidth: number, canvasHeight: number) {
     if (!gameState.running || gameState.paused) return
 
-    const dt = deltaTime / GAME_CONSTANTS.TIME_STEP
+    // Apply slow-mo effect if active
+    const timeScale = gameState.slowMoTimer > 0 ? 0.5 : 1.0;
+    const dt = (deltaTime / GAME_CONSTANTS.TIME_STEP) * timeScale;
 
-    // Update play time
+    // Update timers
     gameState.playTime += deltaTime / 1000
+
+    if (gameState.slowMoTimer > 0) {
+        gameState.slowMoTimer -= deltaTime;
+        if (gameState.slowMoTimer < 0) gameState.slowMoTimer = 0;
+    }
 
     // Check for rest screen
     if (gameState.playTime >= GAME_CONSTANTS.REST_SCREEN_TRIGGER_TIME) {
@@ -93,6 +104,7 @@ export function updateGame(deltaTime: number, canvasWidth: number, canvasHeight:
 
     handleInvincibility(deltaTime);
     handleEncounters(dt, playerX, playerY, lanePositions);
+    handleSigns(dt, playerX, playerY, lanePositions);
     updateScore(dt);
     updateDifficulty();
 
@@ -111,6 +123,54 @@ function handleInvincibility(deltaTime: number) {
             gameState.invincibleTimer = 0
         }
     }
+}
+
+function handleSigns(dt: number, playerX: number, playerY: number, lanePositions: number[]) {
+    gameState.signs = gameState.signs
+        .map((sign) => {
+            const newY = sign.y + gameState.speed * dt * GAME_CONSTANTS.ROAD_SCROLL_SPEED_MULTIPLIER;
+            const signX = lanePositions[sign.lane] - sign.width / 2;
+
+            // Collision check with player
+            if (checkCollision(
+                playerX, playerY, gameState.player.width, gameState.player.height,
+                signX, sign.y, sign.width, sign.height
+            )) {
+                applySignEffect(sign);
+                return null; // Remove sign
+            }
+
+            return { ...sign, y: newY };
+        })
+        .filter((sign): sign is NonNullable<typeof sign> => sign !== null && sign.y < 850);
+}
+
+function applySignEffect(sign: any) {
+    import('../constants').then(({ SIGN_TYPES, POWERUP_CONSTANTS, GAME_CONSTANTS }) => {
+        const signData = SIGN_TYPES[sign.type as keyof typeof SIGN_TYPES];
+        addScoreEvent(signData.points, 'power-up', sign.x, sign.y, signData.description, signData.color);
+        gameState.score += signData.points;
+
+        switch (sign.type) {
+            case 'stop':
+                gameState.slowMoTimer = POWERUP_CONSTANTS.SLOW_MO_DURATION;
+                break;
+            case 'green-light':
+                gameState.multiplier = Math.min(GAME_CONSTANTS.MAX_MULTIPLIER, gameState.multiplier + 2);
+                gameState.combo += 10;
+                break;
+            case 'yield':
+                gameState.lives = Math.min(POWERUP_CONSTANTS.MAX_LIVES, gameState.lives + 1);
+                break;
+            case 'work-ahead':
+                gameState.invincible = true;
+                gameState.invincibleTimer = POWERUP_CONSTANTS.SHIELD_DURATION;
+                break;
+            case 'bump':
+                gameState.enemies = [];
+                break;
+        }
+    });
 }
 
 function handleEncounters(dt: number, playerX: number, playerY: number, lanePositions: number[]) {
@@ -192,9 +252,16 @@ function checkGameOver() {
     }
 }
 
-export function addScoreEvent(points: number, type: 'points' | 'combo' | 'near-miss', x: number, y: number) {
+export function addScoreEvent(
+    points: number,
+    type: 'points' | 'combo' | 'near-miss' | 'power-up',
+    x: number,
+    y: number,
+    label?: string,
+    color?: string
+) {
     const id = Date.now()
-    gameState.scoreEvents.push({ id, points, type, x, y, multiplier: gameState.multiplier })
+    gameState.scoreEvents.push({ id, points, type, x, y, multiplier: gameState.multiplier, label, color })
 
     setTimeout(() => {
         gameState.scoreEvents = gameState.scoreEvents.filter(e => e.id !== id)

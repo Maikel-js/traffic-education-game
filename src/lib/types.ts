@@ -21,10 +21,24 @@ export interface Player {
 export interface ScoreEvent {
     id: number
     points: number
-    type: 'points' | 'combo' | 'near-miss'
+    type: 'points' | 'combo' | 'near-miss' | 'power-up'
+    label?: string
+    color?: string
     x: number
     y: number
     multiplier?: number
+}
+
+export type TrafficSignType = 'stop' | 'green-light' | 'yield' | 'work-ahead' | 'bump';
+
+export interface TrafficSign {
+    id: string
+    type: TrafficSignType
+    x: number
+    y: number
+    lane: number
+    width: number
+    height: number
 }
 
 export interface GameState {
@@ -32,6 +46,7 @@ export interface GameState {
     paused: boolean
     player: Player
     enemies: Enemy[]
+    signs: TrafficSign[]
     roadOffset: number
     speed: number
     lives: number
@@ -42,6 +57,7 @@ export interface GameState {
     scoreEvents: ScoreEvent[]
     invincible: boolean
     invincibleTimer: number
+    slowMoTimer: number
     playTime: number
     showRestScreen: boolean
 }

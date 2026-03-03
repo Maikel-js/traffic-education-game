@@ -19,6 +19,47 @@ export const GAME_CONSTANTS = {
     SCORE_TIME_FACTOR: 0.5,
 } as const;
 
+export const POWERUP_CONSTANTS = {
+    SLOW_MO_DURATION: 5000,
+    SHIELD_DURATION: 3000,
+    SPAWN_CHANCE: 0.15,
+    MIN_LIVES: 1,
+    MAX_LIVES: 5,
+} as const;
+
+export const SIGN_TYPES = {
+    'stop': {
+        color: '#ff4757',
+        symbol: 'STOP',
+        points: 200,
+        description: 'Cámara lenta',
+    },
+    'green-light': {
+        color: '#2ed573',
+        symbol: 'GO',
+        points: 1000,
+        description: 'Súper Puntos',
+    },
+    'yield': {
+        color: '#ffa502',
+        symbol: '▼',
+        points: 300,
+        description: 'Vida Extra',
+    },
+    'work-ahead': {
+        color: '#ff7f50',
+        symbol: '🛠️',
+        points: 400,
+        description: 'Escudo protector',
+    },
+    'bump': {
+        color: '#747d8c',
+        symbol: '〰',
+        points: 500,
+        description: 'Limpiar carretera',
+    },
+} as const;
+
 export const STORAGE_KEYS = {
     HIGH_SCORE: "traffic_game_highscore",
     HIGH_SCORES_LIST: "conduce-seguro-highscores"
