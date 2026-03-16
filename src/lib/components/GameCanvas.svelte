@@ -26,19 +26,20 @@
 	}
 
 	function gameLoop(timestamp: number) {
-		if (gameState.lives <= 0 && previousLives > 0) {
+		// Check if any player lost all lives
+		const anyPlayerDead = gameState.players.some(p => p.lives <= 0);
+		if (anyPlayerDead && previousLives > 0) {
 			previousLives = 0;
 			if (onGameOver) {
 				onGameOver();
 			}
-			// Cancel animation and stop loop
-			if (animationId) {
-				cancelAnimationFrame(animationId);
-			}
-			return;
 		}
 
 		if (!gameState.running || gameState.paused) {
+			// Still render even when paused (for background animations)
+			if (ctx && canvas) {
+				renderGame(ctx, canvas, 0);
+			}
 			animationId = requestAnimationFrame(gameLoop);
 			return;
 		}
@@ -50,7 +51,7 @@
 			updateGame(deltaTime, canvas.width, canvas.height);
 		}
 
-		previousLives = gameState.lives;
+		previousLives = Math.max(...gameState.players.map(p => p.lives));
 
 		if (canvas) {
 			spawnManager.update(deltaTime, canvas.width);
@@ -67,11 +68,18 @@
 
 		// Render
 		if (ctx && canvas) {
-			renderGame(ctx, canvas);
+			renderGame(ctx, canvas, deltaTime);
 		}
 
 		animationId = requestAnimationFrame(gameLoop);
 	}
+
+	$effect(() => {
+		if (gameState.running) {
+			spawnManager.reset(gameState.players.length);
+			previousLives = Math.max(...gameState.players.map(p => p.lives));
+		}
+	});
 
 	onMount(() => {
 		ctx = canvas.getContext("2d")!;
@@ -82,7 +90,6 @@
 		handleInput.init();
 
 		lastTime = performance.now();
-		previousLives = gameState.lives;
 		animationId = requestAnimationFrame(gameLoop);
 	});
 

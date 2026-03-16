@@ -3,14 +3,27 @@
     import type { ScoreEvent } from "$lib/types";
     import { fade, fly } from "svelte/transition";
 
-    let scoreEvents = $derived(gameState.scoreEvents);
+    let containerWidth = $state(0);
+
+    // Gather all score events from all players
+    let allScoreEvents = $derived(
+        gameState.players.flatMap((p, idx) =>
+            p.scoreEvents.map(e => ({
+                ...e,
+                // In 2P mode, offset P2 events to the right half
+                adjustedX: gameState.gameMode === '2p' && idx === 1
+                    ? e.x + containerWidth / 2
+                    : e.x
+            }))
+        )
+    );
 </script>
 
-<div class="score-effects-container">
-    {#each scoreEvents as event (event.id)}
+<div class="score-effects-container" bind:clientWidth={containerWidth}>
+    {#each allScoreEvents as event (event.id)}
         <div
             class="score-effect {event.type}"
-            style="left: {event.x}px; top: {event.y}px; --event-color: {event.color ||
+            style="left: {event.adjustedX}px; top: {event.y}px; --event-color: {event.color ||
                 '#ffca32'};"
             in:fly={{ y: -50, duration: 800 }}
             out:fade={{ duration: 200 }}

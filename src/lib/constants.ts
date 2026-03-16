@@ -18,6 +18,8 @@ export const GAME_CONSTANTS = {
     ENEMY_SPEED_MULTIPLIER: 2,
     TIME_STEP: 16, // ms
     SCORE_TIME_FACTOR: 0.5,
+    TRIVIA_INTERVAL_1P: 1200, // ~20s at 60fps
+    TRIVIA_INTERVAL_2P: 1875, // ~30s at 60fps
 } as const;
 
 export const POWERUP_CONSTANTS = {
@@ -98,3 +100,26 @@ export const SAFETY_TIPS = [
         icon: "🚶"
     }
 ] as const;
+
+/** 2-Player specific constants */
+export const MULTIPLAYER_CONSTANTS = {
+    /** Player 1 keyboard bindings */
+    P1_KEYS: { left: 'a', right: 'd' },
+    /** Player 2 keyboard bindings */
+    P2_KEYS: { left: 'ArrowLeft', right: 'ArrowRight' },
+    /** Lerp factor for smooth lane transitions (0-1, higher = faster snap) */
+    LANE_LERP_SPEED: 0.15,
+    /** Player colors for HUD differentiation */
+    P1_COLOR: '#FFD700',
+    P2_COLOR: '#00D4FF',
+} as const;
+
+/** Animated background system constants */
+export const BACKGROUND_CONSTANTS = {
+    /** Milliseconds between background scene changes */
+    CYCLE_INTERVAL: 5000,
+    /** Milliseconds for crossfade transition between scenes */
+    TRANSITION_DURATION: 1500,
+    /** Number of distinct background scenes */
+    SCENE_COUNT: 4,
+} as const;

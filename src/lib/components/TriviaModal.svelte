@@ -1,25 +1,29 @@
 <script lang="ts">
+	import { gameState } from "$lib/stores/game-state.svelte";
 	import type { TriviaQuestion } from "$lib/types";
 	import { addScore, removeLife } from "$lib/stores/game-state.svelte";
 	import { soundManager } from "$lib/utils/sound-manager.svelte";
 
-	let { trivia, onAnswer } = $props<{
+	let { trivia, onAnswer, playerIndex = 0 } = $props<{
 		trivia: TriviaQuestion;
 		onAnswer: () => void;
+		playerIndex?: number;
 	}>();
 
 	let answered = $state(false);
 	let selectedIndex = $state(-1);
+
+	let is2P = $derived(gameState.gameMode === '2p');
 
 	function handleAnswer(index: number) {
 		selectedIndex = index;
 		answered = true;
 
 		if (index === trivia.correctIndex) {
-			addScore(300);
+			addScore(300, playerIndex);
 			soundManager.playCorrectAnswer();
 		} else {
-			removeLife();
+			removeLife(playerIndex);
 			soundManager.playWrongAnswer();
 		}
 
@@ -34,7 +38,14 @@
 	<div class="modal-content">
 		<div class="modal-header">
 			<div class="trivia-icon">🚦</div>
-			<h3>Pregunta de Educación Vial</h3>
+			<h3>
+				Pregunta de Educación Vial
+				{#if is2P}
+					<span class="player-tag" class:p1={playerIndex === 0} class:p2={playerIndex === 1}>
+						J{playerIndex + 1}
+					</span>
+				{/if}
+			</h3>
 		</div>
 
 		<div class="question">
@@ -166,6 +177,29 @@
 		margin: 0;
 		text-transform: uppercase;
 		letter-spacing: 1px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+	}
+
+	.player-tag {
+		font-size: 14px;
+		padding: 4px 10px;
+		border-radius: 8px;
+		font-weight: 900;
+	}
+
+	.player-tag.p1 {
+		background: rgba(255, 215, 0, 0.2);
+		color: #FFD700;
+		border: 2px solid rgba(255, 215, 0, 0.4);
+	}
+
+	.player-tag.p2 {
+		background: rgba(0, 212, 255, 0.2);
+		color: #00D4FF;
+		border: 2px solid rgba(0, 212, 255, 0.4);
 	}
 
 	.question {

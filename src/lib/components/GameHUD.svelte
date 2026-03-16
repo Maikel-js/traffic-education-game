@@ -3,23 +3,25 @@
 	import { soundManager } from "$lib/utils/sound-manager.svelte";
 	import { tweened } from "svelte/motion";
 	import { cubicOut } from "svelte/easing";
+	import { MULTIPLAYER_CONSTANTS } from "$lib/constants";
 
 	let paused = $derived(gameState.paused);
 	let muted = $derived(soundManager.muted);
-	let lives = $derived(gameState.lives);
-	let scoreValue = $derived(gameState.score);
-	let highScore = $derived(gameState.highScore);
-	let combo = $derived(gameState.combo);
-	let multiplier = $derived(gameState.multiplier);
+	let is2P = $derived(gameState.gameMode === '2p');
+	let players = $derived(gameState.players);
 
-	// Tweened score for smooth numbers
-	const tweenedScore = tweened(0, {
-		duration: 400,
-		easing: cubicOut,
+	// Tweened scores for smooth numbers
+	const tweenedScore1 = tweened(0, { duration: 400, easing: cubicOut });
+	const tweenedScore2 = tweened(0, { duration: 400, easing: cubicOut });
+
+	$effect(() => {
+		tweenedScore1.set(players[0]?.score || 0);
 	});
 
 	$effect(() => {
-		tweenedScore.set(scoreValue);
+		if (players.length > 1) {
+			tweenedScore2.set(players[1]?.score || 0);
+		}
 	});
 
 	function handlePause() {
@@ -31,49 +33,103 @@
 	}
 </script>
 
-<div class="hud-container">
-	<div class="hud-left">
-		<div class="hud-stat">
-			<span class="stat-icon">❤️</span>
-			<span class="stat-value">{lives}</span>
-		</div>
-		<div class="hud-stat">
-			<span class="stat-icon">⭐</span>
-			<!-- Using tweened score for smooth effects -->
-			<span class="stat-value">{Math.floor($tweenedScore)}</span>
-		</div>
-		{#if combo > 1}
-			<div
-				class="hud-stat combo-stat"
-				class:high-multiplier={multiplier >= 3}
-			>
-				<span class="combo-label">COMBO</span>
-				<span class="combo-value">x{combo}</span>
-				<div class="multiplier-tag">x{multiplier}</div>
+<div class="hud-container" class:two-player={is2P}>
+	{#if is2P}
+		<!-- 2-Player HUD -->
+		<div class="hud-left">
+			<div class="player-hud p1-hud">
+				<div class="player-label" style="color: {MULTIPLAYER_CONSTANTS.P1_COLOR}">J1</div>
+				<div class="hud-stat">
+					<span class="stat-icon">❤️</span>
+					<span class="stat-value">{players[0]?.lives ?? 0}</span>
+				</div>
+				<div class="hud-stat">
+					<span class="stat-icon">⭐</span>
+					<span class="stat-value">{Math.floor($tweenedScore1)}</span>
+				</div>
+				{#if (players[0]?.combo ?? 0) > 1}
+					<div class="hud-stat combo-stat" class:high-multiplier={(players[0]?.multiplier ?? 1) >= 3}>
+						<span class="combo-label">COMBO</span>
+						<span class="combo-value">x{players[0]?.combo}</span>
+						<div class="multiplier-tag">x{players[0]?.multiplier}</div>
+					</div>
+				{/if}
 			</div>
-		{/if}
-		<div class="hud-stat record-stat">
-			<span class="stat-icon">🏆</span>
-			<span class="stat-value">{Math.floor(highScore || 0)}</span>
 		</div>
-	</div>
 
-	<div class="hud-right">
-		<button
-			onclick={handlePause}
-			class="btn-hud"
-			aria-label={paused ? "Continuar juego" : "Pausar juego"}
-		>
-			{paused ? "▶️" : "⏸️"}
-		</button>
-		<button
-			onclick={toggleMute}
-			class="btn-hud"
-			aria-label={muted ? "Activar sonido" : "Desactivar sonido"}
-		>
-			{muted ? "🔇" : "🔊"}
-		</button>
-	</div>
+		<div class="hud-center">
+			<button onclick={handlePause} class="btn-hud" aria-label={paused ? "Continuar juego" : "Pausar juego"}>
+				{paused ? "▶️" : "⏸️"}
+			</button>
+			<button onclick={toggleMute} class="btn-hud" aria-label={muted ? "Activar sonido" : "Desactivar sonido"}>
+				{muted ? "🔇" : "🔊"}
+			</button>
+		</div>
+
+		<div class="hud-right">
+			<div class="player-hud p2-hud">
+				<div class="player-label" style="color: {MULTIPLAYER_CONSTANTS.P2_COLOR}">J2</div>
+				<div class="hud-stat">
+					<span class="stat-icon">❤️</span>
+					<span class="stat-value">{players[1]?.lives ?? 0}</span>
+				</div>
+				<div class="hud-stat">
+					<span class="stat-icon">⭐</span>
+					<span class="stat-value">{Math.floor($tweenedScore2)}</span>
+				</div>
+				{#if (players[1]?.combo ?? 0) > 1}
+					<div class="hud-stat combo-stat" class:high-multiplier={(players[1]?.multiplier ?? 1) >= 3}>
+						<span class="combo-label">COMBO</span>
+						<span class="combo-value">x{players[1]?.combo}</span>
+						<div class="multiplier-tag">x{players[1]?.multiplier}</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{:else}
+		<!-- 1-Player HUD (original) -->
+		<div class="hud-left">
+			<div class="hud-stat">
+				<span class="stat-icon">❤️</span>
+				<span class="stat-value">{players[0]?.lives ?? 0}</span>
+			</div>
+			<div class="hud-stat">
+				<span class="stat-icon">⭐</span>
+				<span class="stat-value">{Math.floor($tweenedScore1)}</span>
+			</div>
+			{#if (players[0]?.combo ?? 0) > 1}
+				<div
+					class="hud-stat combo-stat"
+					class:high-multiplier={(players[0]?.multiplier ?? 1) >= 3}
+				>
+					<span class="combo-label">COMBO</span>
+					<span class="combo-value">x{players[0]?.combo}</span>
+					<div class="multiplier-tag">x{players[0]?.multiplier}</div>
+				</div>
+			{/if}
+			<div class="hud-stat record-stat">
+				<span class="stat-icon">🏆</span>
+				<span class="stat-value">{Math.floor(players[0]?.highScore || 0)}</span>
+			</div>
+		</div>
+
+		<div class="hud-right">
+			<button
+				onclick={handlePause}
+				class="btn-hud"
+				aria-label={paused ? "Continuar juego" : "Pausar juego"}
+			>
+				{paused ? "▶️" : "⏸️"}
+			</button>
+			<button
+				onclick={toggleMute}
+				class="btn-hud"
+				aria-label={muted ? "Activar sonido" : "Desactivar sonido"}
+			>
+				{muted ? "🔇" : "🔊"}
+			</button>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -95,6 +151,31 @@
 		pointer-events: all;
 	}
 
+	.hud-right {
+		display: flex;
+		gap: 8px;
+		pointer-events: all;
+	}
+
+	.hud-center {
+		display: flex;
+		gap: 8px;
+		pointer-events: all;
+	}
+
+	.player-hud {
+		display: flex;
+		gap: 8px;
+		align-items: flex-start;
+	}
+
+	.player-label {
+		font-size: 14px;
+		font-weight: 900;
+		padding: 10px 8px;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+	}
+
 	.hud-stat {
 		background: rgba(0, 0, 0, 0.75);
 		backdrop-filter: blur(10px);
@@ -105,6 +186,10 @@
 		align-items: center;
 		gap: 8px;
 		min-width: 80px;
+	}
+
+	.p2-hud .hud-stat {
+		border-color: rgba(0, 212, 255, 0.3);
 	}
 
 	.stat-icon {
@@ -128,6 +213,7 @@
 		padding: 4px 12px;
 		min-width: 60px;
 		animation: pulse 1s infinite alternate;
+		position: relative;
 	}
 
 	.high-multiplier {
@@ -165,12 +251,6 @@
 		position: absolute;
 		top: -8px;
 		right: -8px;
-	}
-
-	.hud-right {
-		display: flex;
-		gap: 8px;
-		pointer-events: all;
 	}
 
 	.btn-hud {
@@ -223,6 +303,19 @@
 			width: 40px;
 			height: 40px;
 			font-size: 16px;
+		}
+
+		.two-player .hud-stat {
+			padding: 6px 8px;
+			min-width: 50px;
+		}
+
+		.two-player .stat-icon {
+			font-size: 16px;
+		}
+
+		.two-player .stat-value {
+			font-size: 14px;
 		}
 	}
 </style>

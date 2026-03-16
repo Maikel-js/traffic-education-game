@@ -41,14 +41,48 @@ export interface TrafficSign {
     height: number
 }
 
-export interface GameState {
-    running: boolean
-    paused: boolean
+/** Game mode: single player or local 2-player */
+export type GameMode = '1p' | '2p';
+
+/**
+ * Per-player state — encapsulates all data unique to each player.
+ * In 1P mode only players[0] is used; in 2P mode both are active.
+ */
+export interface PlayerState {
+    id: 1 | 2
     player: Player
     enemies: Enemy[]
     signs: TrafficSign[]
+    lives: number
+    score: number
+    highScore: number
+    combo: number
+    maxCombo: number
+    multiplier: number
+    scoreEvents: ScoreEvent[]
+    invincible: boolean
+    invincibleTimer: number
+    slowMoTimer: number
+    /** Smoothly interpolated X position for rendering */
+    displayX: number
+}
+
+export interface GameState {
+    running: boolean
+    paused: boolean
+    gameMode: GameMode
+    players: PlayerState[]
     roadOffset: number
     speed: number
+    playTime: number
+    showRestScreen: boolean
+    /** In 2P mode, the winning player id (1 or 2). null while game is active. */
+    winner: number | null
+
+    // Legacy single-player aliases (kept for backward compatibility)
+    player: Player
+    enemies: Enemy[]
+    signs: TrafficSign[]
     lives: number
     score: number
     highScore: number
@@ -58,8 +92,6 @@ export interface GameState {
     invincible: boolean
     invincibleTimer: number
     slowMoTimer: number
-    playTime: number
-    showRestScreen: boolean
 }
 
 export interface TriviaQuestion {

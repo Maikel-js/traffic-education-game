@@ -6,20 +6,21 @@
 	let showControls = $state(false);
 
 	let running = $derived(gameState.running);
-	let gameOver = $derived(gameState.lives <= 0);
+	let gameOver = $derived(gameState.players.some(p => p.lives <= 0));
+	let is2P = $derived(gameState.gameMode === '2p');
 
 	function checkMobile() {
 		showControls = window.innerWidth < 768;
 	}
 
-	function handleLeft(e: Event) {
+	function handleLeft(e: Event, playerIndex = 0) {
 		e.preventDefault();
-		handleInput.moveLane(-1);
+		handleInput.moveLane(playerIndex, -1);
 	}
 
-	function handleRight(e: Event) {
+	function handleRight(e: Event, playerIndex = 0) {
 		e.preventDefault();
-		handleInput.moveLane(1);
+		handleInput.moveLane(playerIndex, 1);
 	}
 
 	onMount(() => {
@@ -30,21 +31,23 @@
 </script>
 
 {#if showControls && running && !gameOver}
-	<div class="mobile-controls">
-		<button
-			ontouchstart={handleLeft}
-			onclick={handleLeft}
-			class="control-btn"
-		>
-			◀
-		</button>
-		<button
-			ontouchstart={handleRight}
-			onclick={handleRight}
-			class="control-btn"
-		>
-			▶
-		</button>
+	<div class="mobile-controls" class:two-player={is2P}>
+		{#if is2P}
+			<!-- 2P mobile controls -->
+			<div class="player-controls">
+				<span class="player-mobile-label p1-label">J1</span>
+				<button ontouchstart={(e) => handleLeft(e, 0)} onclick={(e) => handleLeft(e, 0)} class="control-btn p1-btn">◀</button>
+				<button ontouchstart={(e) => handleRight(e, 0)} onclick={(e) => handleRight(e, 0)} class="control-btn p1-btn">▶</button>
+			</div>
+			<div class="player-controls">
+				<span class="player-mobile-label p2-label">J2</span>
+				<button ontouchstart={(e) => handleLeft(e, 1)} onclick={(e) => handleLeft(e, 1)} class="control-btn p2-btn">◀</button>
+				<button ontouchstart={(e) => handleRight(e, 1)} onclick={(e) => handleRight(e, 1)} class="control-btn p2-btn">▶</button>
+			</div>
+		{:else}
+			<button ontouchstart={(e) => handleLeft(e)} onclick={(e) => handleLeft(e)} class="control-btn">◀</button>
+			<button ontouchstart={(e) => handleRight(e)} onclick={(e) => handleRight(e)} class="control-btn">▶</button>
+		{/if}
 	</div>
 {/if}
 
@@ -57,6 +60,37 @@
 		display: flex;
 		gap: 16px;
 		z-index: 60;
+	}
+
+	.mobile-controls.two-player {
+		gap: 0;
+		left: 0;
+		right: 0;
+		transform: none;
+		justify-content: space-between;
+		padding: 0 20px;
+		width: 100%;
+	}
+
+	.player-controls {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+	}
+
+	.player-mobile-label {
+		font-size: 14px;
+		font-weight: 900;
+		padding: 4px 8px;
+		border-radius: 6px;
+	}
+
+	.p1-label {
+		color: #FFD700;
+	}
+
+	.p2-label {
+		color: #00D4FF;
 	}
 
 	.control-btn {
@@ -76,6 +110,16 @@
 		transition: all 0.2s;
 		-webkit-tap-highlight-color: transparent;
 		user-select: none;
+	}
+
+	.p1-btn {
+		border-color: rgba(255, 215, 0, 0.5);
+		color: #FFD700;
+	}
+
+	.p2-btn {
+		border-color: rgba(0, 212, 255, 0.5);
+		color: #00D4FF;
 	}
 
 	.control-btn:active {

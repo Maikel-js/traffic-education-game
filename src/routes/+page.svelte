@@ -9,39 +9,51 @@
 	import MobileControls from "$lib/components/MobileControls.svelte";
 	import EducationBreak from "$lib/components/EducationBreak.svelte";
 	import ScoreEffects from "$lib/components/ScoreEffects.svelte";
+	import FPSCounter from "$lib/components/FPSCounter.svelte";
 	import {
 		gameState,
 		resetGame,
 		togglePause,
 	} from "$lib/stores/game-state.svelte";
 	import { soundManager } from "$lib/utils/sound-manager.svelte";
+	import type { GameMode } from "$lib/types";
 
 	let gameStarted = $state(false);
 	let showTrivia = $state(false);
 	let currentTrivia = $state<any>(null);
+	let triviaPlayerIndex = $state(0);
 
 	let gameRunning = $derived(gameState.running);
 	let paused = $derived(gameState.paused);
-	let lives = $derived(gameState.lives);
 
-	let showGameOver = $derived(gameStarted && lives <= 0);
+	// Game over: any player has lost all lives
+	let showGameOver = $derived(
+		gameStarted && gameState.players.some(p => p.lives <= 0)
+	);
 
-	async function handleStartGame() {
+	async function handleStartGame(mode: GameMode) {
 		await soundManager.unblockAudio();
-		resetGame();
+		resetGame(mode);
 		gameStarted = true;
 		gameState.running = true;
 	}
 
 	function handleRestart() {
-		resetGame();
+		const currentMode = gameState.gameMode;
+		resetGame(currentMode);
 		gameStarted = true;
 		gameState.running = true;
+		showTrivia = false;
+		currentTrivia = null;
 	}
 
 	function handleShowTrivia(trivia: any) {
 		showTrivia = true;
 		currentTrivia = trivia;
+		// In 2P mode, randomly assign trivia to a player
+		triviaPlayerIndex = gameState.gameMode === '2p'
+			? Math.floor(Math.random() * 2)
+			: 0;
 		gameState.paused = true;
 	}
 
@@ -77,7 +89,7 @@
 		<ScoreEffects />
 		<MobileControls />
 
-		<!-- Game over screen now shows when lives reach 0 -->
+		<!-- Game over screen -->
 		{#if showGameOver}
 			<GameOverScreen onRestart={handleRestart} />
 		{:else if paused}
@@ -92,8 +104,13 @@
 		{/if}
 
 		{#if showTrivia && currentTrivia}
-			<TriviaModal trivia={currentTrivia} onAnswer={handleTriviaAnswer} />
+			<TriviaModal
+				trivia={currentTrivia}
+				onAnswer={handleTriviaAnswer}
+				playerIndex={triviaPlayerIndex}
+			/>
 		{/if}
+		<FPSCounter />
 	{/if}
 </div>
 

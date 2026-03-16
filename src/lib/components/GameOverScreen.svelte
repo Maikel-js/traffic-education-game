@@ -1,16 +1,29 @@
 <script lang="ts">
 	import { gameState } from "$lib/stores/game-state.svelte";
+	import { MULTIPLAYER_CONSTANTS } from "$lib/constants";
 
 	let { onRestart } = $props<{ onRestart: () => void }>();
 
-	let score = $derived(gameState.score);
-	let highScore = $derived(gameState.highScore);
+	let is2P = $derived(gameState.gameMode === '2p');
+	let winner = $derived(gameState.winner);
+	let players = $derived(gameState.players);
+	let p1 = $derived(players[0]);
+	let p2 = $derived(players[1]);
+
+	// 1P stats
+	let score = $derived(p1?.score ?? 0);
+	let highScore = $derived(p1?.highScore ?? 0);
 	let isNewRecord = $derived(score >= highScore && score > 0);
 
 	function handleShare() {
-		const text = `¡Obtuve ${Math.floor(score)} puntos en el Juego de Educación Vial! 🚌🇩🇴`;
+		let text: string;
+		if (is2P && winner) {
+			text = `¡Jugador ${winner} ganó con ${Math.floor(players[winner - 1].score)} puntos en Conduce Seguro RD! 🚌🇩🇴`;
+		} else {
+			text = `¡Obtuve ${Math.floor(score)} puntos en Conduce Seguro RD! 🚌🇩🇴`;
+		}
 		if (navigator.share) {
-			navigator.share({ title: "Juego de Educación Vial", text });
+			navigator.share({ title: "Conduce Seguro RD", text });
 		} else {
 			navigator.clipboard.writeText(text);
 			alert("¡Puntaje copiado al portapapeles!");
@@ -20,26 +33,77 @@
 
 <div class="screen-overlay">
 	<div class="content">
-		<div class="game-over-icon">💥</div>
-		<h2>¡Juego Terminado!</h2>
+		{#if is2P && winner}
+			<!-- 2-Player victory screen -->
+			<div class="game-over-icon">🏆</div>
+			<h2 style="color: {winner === 1 ? MULTIPLAYER_CONSTANTS.P1_COLOR : MULTIPLAYER_CONSTANTS.P2_COLOR}">
+				¡Jugador {winner} Gana!
+			</h2>
 
-		<div class="final-stats">
-			{#if isNewRecord}
-				<div class="new-record-badge">🏆 ¡NUEVO RÉCORD! 🏆</div>
-			{/if}
-			<div class="stat-group">
-				<div class="stat-item">
-					<div class="stat-label">Puntos Finales</div>
-					<div class="stat-value">{Math.floor(score)}</div>
+			<div class="final-stats two-player-stats">
+				<div class="player-stats-col" style="--player-color: {MULTIPLAYER_CONSTANTS.P1_COLOR}">
+					<div class="player-stats-label">Jugador 1</div>
+					<div class="stat-item">
+						<div class="stat-label">Puntos</div>
+						<div class="stat-value">{Math.floor(p1?.score ?? 0)}</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Combo Máx.</div>
+						<div class="stat-value secondary">{p1?.maxCombo ?? 0}</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Vidas Restantes</div>
+						<div class="stat-value secondary">{p1?.lives ?? 0}</div>
+					</div>
 				</div>
-				<div class="stat-item">
-					<div class="stat-label">Mejor Récord</div>
-					<div class="stat-value secondary">
-						{Math.floor(highScore)}
+
+				<div class="stats-divider"></div>
+
+				<div class="player-stats-col" style="--player-color: {MULTIPLAYER_CONSTANTS.P2_COLOR}">
+					<div class="player-stats-label">Jugador 2</div>
+					<div class="stat-item">
+						<div class="stat-label">Puntos</div>
+						<div class="stat-value">{Math.floor(p2?.score ?? 0)}</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Combo Máx.</div>
+						<div class="stat-value secondary">{p2?.maxCombo ?? 0}</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Vidas Restantes</div>
+						<div class="stat-value secondary">{p2?.lives ?? 0}</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		{:else}
+			<!-- 1-Player game over screen -->
+			<div class="game-over-icon">💥</div>
+			<h2>¡Juego Terminado!</h2>
+
+			<div class="final-stats">
+				{#if isNewRecord}
+					<div class="new-record-badge">🏆 ¡NUEVO RÉCORD! 🏆</div>
+				{/if}
+				<div class="stat-group">
+					<div class="stat-item">
+						<div class="stat-label">Puntos Finales</div>
+						<div class="stat-value">{Math.floor(score)}</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Mejor Récord</div>
+						<div class="stat-value secondary">
+							{Math.floor(highScore)}
+						</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Combo Máximo</div>
+						<div class="stat-value secondary">
+							{p1?.maxCombo ?? 0}
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
 
 		<div class="button-group">
 			<button onclick={onRestart} class="btn-primary">
@@ -81,7 +145,7 @@
 
 	.content {
 		text-align: center;
-		max-width: 500px;
+		max-width: 600px;
 		padding: 40px;
 		animation: slideUp 0.6s ease-out;
 	}
@@ -129,6 +193,34 @@
 		border-radius: 16px;
 		padding: 24px;
 		margin-bottom: 24px;
+	}
+
+	.two-player-stats {
+		display: flex;
+		gap: 16px;
+		align-items: stretch;
+	}
+
+	.player-stats-col {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.player-stats-label {
+		font-size: 16px;
+		font-weight: 900;
+		color: var(--player-color);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 4px;
+	}
+
+	.stats-divider {
+		width: 2px;
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 2px;
 	}
 
 	.stat-group {
@@ -236,6 +328,15 @@
 
 		.stat-value {
 			font-size: 30px;
+		}
+
+		.two-player-stats {
+			flex-direction: column;
+		}
+
+		.stats-divider {
+			width: 100%;
+			height: 2px;
 		}
 	}
 </style>

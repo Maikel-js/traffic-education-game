@@ -1,5 +1,12 @@
 <script lang="ts">
-	let { onStart } = $props<{ onStart: () => void }>();
+	let { onStart } = $props<{ onStart: (mode: '1p' | '2p') => void }>();
+
+	let selectedMode = $state<'1p' | '2p' | null>(null);
+
+	function handleStart(mode: '1p' | '2p') {
+		selectedMode = mode;
+		onStart(mode);
+	}
 </script>
 
 <div class="screen-overlay">
@@ -15,18 +22,32 @@
 			<div class="feature">✓ 50+ preguntas de educación vial</div>
 			<div class="feature">✓ 5 carriles de acción</div>
 			<div class="feature">✓ Aprende las leyes de tránsito</div>
+			<div class="feature">✓ Modo 2 jugadores local</div>
 		</div>
 
-		<button onclick={onStart} class="btn-start">
-			Comenzar a Jugar
-		</button>
+		<div class="mode-buttons">
+			<button onclick={() => handleStart('1p')} class="btn-start btn-1p">
+				🎮 1 Jugador
+			</button>
+			<button onclick={() => handleStart('2p')} class="btn-start btn-2p">
+				👥 2 Jugadores
+			</button>
+		</div>
 
 		<div class="instructions">
 			<h3>Controles:</h3>
 			<div class="controls-grid">
-				<div class="control">← → Cambiar carril</div>
-				<div class="control">P Pausar</div>
-				<div class="control">Espacio Bocina</div>
+				<div class="control-section">
+					<div class="control-title">1 Jugador</div>
+					<div class="control">← → ó A/D Cambiar carril</div>
+					<div class="control">P / Esc Pausar</div>
+					<div class="control">Espacio Bocina</div>
+				</div>
+				<div class="control-section">
+					<div class="control-title">2 Jugadores</div>
+					<div class="control player1-control">J1: A / D Cambiar carril</div>
+					<div class="control player2-control">J2: ← / → Cambiar carril</div>
+				</div>
 			</div>
 		</div>
 
@@ -46,6 +67,7 @@
 		justify-content: center;
 		z-index: 100;
 		animation: fadeIn 0.4s ease-out;
+		overflow-y: auto;
 	}
 
 	@keyframes fadeIn {
@@ -124,24 +146,46 @@
 		border: 1px solid rgba(255, 200, 50, 0.3);
 	}
 
+	.mode-buttons {
+		display: flex;
+		gap: 16px;
+		justify-content: center;
+		margin-bottom: 24px;
+	}
+
 	.btn-start {
-		background: linear-gradient(135deg, hsl(48, 100%, 50%), hsl(48, 100%, 40%));
 		color: hsl(210, 80%, 10%);
 		border: none;
-		padding: 18px 48px;
+		padding: 18px 36px;
 		border-radius: 12px;
-		font-size: 24px;
+		font-size: 22px;
 		font-weight: 800;
 		cursor: pointer;
 		transition: all 0.3s;
-		box-shadow: 0 8px 24px rgba(255, 200, 50, 0.4);
 		text-transform: uppercase;
 		letter-spacing: 1px;
 	}
 
+	.btn-1p {
+		background: linear-gradient(135deg, hsl(48, 100%, 50%), hsl(48, 100%, 40%));
+		box-shadow: 0 8px 24px rgba(255, 200, 50, 0.4);
+	}
+
+	.btn-2p {
+		background: linear-gradient(135deg, hsl(190, 100%, 45%), hsl(190, 80%, 35%));
+		box-shadow: 0 8px 24px rgba(0, 180, 220, 0.4);
+	}
+
 	.btn-start:hover {
 		transform: scale(1.05) translateY(-2px);
+	}
+
+	.btn-1p:hover {
 		box-shadow: 0 12px 32px rgba(255, 200, 50, 0.6);
+	}
+
+	.btn-2p:hover {
+		box-shadow: 0 12px 32px rgba(0, 180, 220, 0.6);
 	}
 
 	.instructions {
@@ -160,9 +204,23 @@
 
 	.controls-grid {
 		display: flex;
-		gap: 16px;
+		gap: 24px;
 		justify-content: center;
 		flex-wrap: wrap;
+	}
+
+	.control-section {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.control-title {
+		font-size: 13px;
+		font-weight: 800;
+		color: hsl(48, 100%, 60%);
+		text-transform: uppercase;
+		letter-spacing: 1px;
 	}
 
 	.control {
@@ -172,6 +230,16 @@
 		color: rgba(255, 255, 255, 0.9);
 		font-size: 14px;
 		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.player1-control {
+		border-color: rgba(255, 200, 50, 0.4);
+		color: hsl(48, 100%, 75%);
+	}
+
+	.player2-control {
+		border-color: rgba(0, 212, 255, 0.4);
+		color: hsl(190, 100%, 75%);
 	}
 
 	.edu-badge {
@@ -195,8 +263,13 @@
 		}
 
 		.btn-start {
-			padding: 14px 32px;
-			font-size: 20px;
+			padding: 14px 24px;
+			font-size: 18px;
+		}
+
+		.mode-buttons {
+			flex-direction: column;
+			align-items: center;
 		}
 	}
 </style>
