@@ -73,7 +73,8 @@ class SpawnManager {
     if (ps.signs.length > 5) return
 
     const lane = Math.floor(Math.random() * 5)
-    const lanePositions = getLanePositions(canvasWidth)
+    const { positions: lanePositions, laneWidth } = getLanePositions(canvasWidth)
+    const scale = laneWidth / 90
 
     const signTypes = Object.keys(SIGN_TYPES) as TrafficSignType[]
     const type = signTypes[Math.floor(Math.random() * signTypes.length)]
@@ -82,10 +83,10 @@ class SpawnManager {
       id: crypto.randomUUID(),
       type,
       lane,
-      x: lanePositions[lane] - 25,
+      x: lanePositions[lane] - (25 * scale),
       y: -100,
-      width: 50,
-      height: 50,
+      width: 50 * scale,
+      height: 50 * scale,
     })
   }
 
@@ -93,7 +94,8 @@ class SpawnManager {
     if (ps.enemies.length > 12) return
 
     const lane = Math.floor(Math.random() * 5)
-    const lanePositions = getLanePositions(canvasWidth)
+    const { positions: lanePositions, laneWidth } = getLanePositions(canvasWidth)
+    const scale = laneWidth / 90
 
     const tooClose = ps.enemies.some((e) => e.lane === lane && e.y < 150)
     if (tooClose && Math.random() < 0.9) return
@@ -102,12 +104,12 @@ class SpawnManager {
 
     ps.enemies.push({
       id: crypto.randomUUID(),
-      x: lanePositions[lane] - 35,
+      x: lanePositions[lane] - (35 * scale),
       y: -150 - Math.random() * 200,
       lane,
-      width: 50 + Math.random() * 40,
-      height: 80 + Math.random() * 60,
-      speed: 0.7 + Math.random() * 1.8,
+      width: (50 + Math.random() * 40) * scale,
+      height: (80 + Math.random() * 60) * scale,
+      speed: 0.5 + Math.random() * 1.2,
       color: colors[Math.floor(Math.random() * colors.length)],
     })
   }

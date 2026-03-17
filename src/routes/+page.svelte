@@ -22,6 +22,7 @@
 	let showTrivia = $state(false);
 	let currentTrivia = $state<any>(null);
 	let triviaPlayerIndex = $state(0);
+	let triviaQueue = $state<{ trivia: any; playerIndex: number }[]>([]);
 
 	let gameRunning = $derived(gameState.running);
 	let paused = $derived(gameState.paused);
@@ -47,20 +48,42 @@
 		currentTrivia = null;
 	}
 
-	function handleShowTrivia(trivia: any) {
-		showTrivia = true;
-		currentTrivia = trivia;
-		// In 2P mode, randomly assign trivia to a player
-		triviaPlayerIndex = gameState.gameMode === '2p'
-			? Math.floor(Math.random() * 2)
-			: 0;
-		gameState.paused = true;
+	function handleShowTrivia(triviaData: any | any[]) {
+		if (Array.isArray(triviaData)) {
+			triviaData.forEach((trivia, i) => {
+				triviaQueue.push({ trivia, playerIndex: i });
+			});
+		} else {
+			triviaQueue.push({ trivia: triviaData, playerIndex: 0 });
+		}
+
+		if (!showTrivia) {
+			processTriviaQueue();
+		}
+	}
+
+	function processTriviaQueue() {
+		if (triviaQueue.length > 0) {
+			const next = triviaQueue.shift()!;
+			currentTrivia = next.trivia;
+			triviaPlayerIndex = next.playerIndex;
+			showTrivia = true;
+			gameState.paused = true;
+		}
 	}
 
 	function handleTriviaAnswer() {
 		showTrivia = false;
 		currentTrivia = null;
-		gameState.paused = false;
+
+		if (triviaQueue.length > 0) {
+			// Small delay before showing the next question
+			setTimeout(() => {
+				processTriviaQueue();
+			}, 400);
+		} else {
+			gameState.paused = false;
+		}
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
@@ -92,7 +115,7 @@
 		<!-- Game over screen -->
 		{#if showGameOver}
 			<GameOverScreen onRestart={handleRestart} />
-		{:else if paused}
+		{:else if paused && !showTrivia}
 			<PauseScreen
 				onResume={() => (gameState.paused = false)}
 				onRestart={handleRestart}

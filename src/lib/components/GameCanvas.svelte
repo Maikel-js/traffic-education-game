@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
+	import { onMount, onDestroy, untrack } from "svelte";
 	import { gameState, updateGame } from "$lib/stores/game-state.svelte";
 	import { renderGame } from "$lib/utils/game-renderer";
 	import { handleInput } from "$lib/utils/input-handler";
@@ -7,7 +7,7 @@
 	import { triviaQuestions } from "$lib/data/trivia-questions";
 
 	let { onShowTrivia, onGameOver } = $props<{
-		onShowTrivia: (trivia: any) => void;
+		onShowTrivia: (trivia: any | any[]) => void;
 		onGameOver?: () => void;
 	}>();
 	let canvas: HTMLCanvasElement;
@@ -59,11 +59,23 @@
 
 		// Check if we should show trivia
 		if (spawnManager.shouldShowTrivia()) {
-			const trivia =
-				triviaQuestions[
-					Math.floor(Math.random() * triviaQuestions.length)
-				];
-			onShowTrivia(trivia);
+			if (gameState.gameMode === "2p") {
+				const trivia1 =
+					triviaQuestions[
+						Math.floor(Math.random() * triviaQuestions.length)
+					];
+				const trivia2 =
+					triviaQuestions[
+						Math.floor(Math.random() * triviaQuestions.length)
+					];
+				onShowTrivia([trivia1, trivia2]);
+			} else {
+				const trivia =
+					triviaQuestions[
+						Math.floor(Math.random() * triviaQuestions.length)
+					];
+				onShowTrivia(trivia);
+			}
 		}
 
 		// Render
@@ -74,10 +86,18 @@
 		animationId = requestAnimationFrame(gameLoop);
 	}
 
+	let gameInitialized = false;
 	$effect(() => {
 		if (gameState.running) {
-			spawnManager.reset(gameState.players.length);
-			previousLives = Math.max(...gameState.players.map(p => p.lives));
+			if (!gameInitialized) {
+				untrack(() => {
+					spawnManager.reset(gameState.players.length);
+					previousLives = Math.max(...gameState.players.map(p => p.lives));
+				});
+				gameInitialized = true;
+			}
+		} else {
+			gameInitialized = false;
 		}
 	});
 

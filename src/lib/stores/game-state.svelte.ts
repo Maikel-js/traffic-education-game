@@ -142,12 +142,19 @@ export function updateGame(deltaTime: number, canvasWidth: number, canvasHeight:
             if (ps.slowMoTimer < 0) ps.slowMoTimer = 0;
         }
 
-        const lanePositions = getLanePositions(playerCanvasWidth);
+        const { positions: lanePositions, laneWidth } = getLanePositions(playerCanvasWidth);
+        const baseLaneWidth = 90; // Approx lane width in 1P mode
+        const scale = laneWidth / baseLaneWidth;
+
+        // Scale player dimensions based on lane width
+        ps.player.width = 70 * scale;
+        ps.player.height = 110 * scale;
+
         const playerX = lanePositions[ps.player.lane] - ps.player.width / 2;
         const playerY = canvasHeight * 0.75 - ps.player.height / 2;
 
         handleInvincibility(deltaTime, ps);
-        handleEncounters(playerDt, playerX, playerY, lanePositions, ps);
+        handleEncounters(playerDt, playerX, playerY, lanePositions, ps, scale);
         handleSigns(playerDt, playerX, playerY, lanePositions, ps);
         updateScoreForPlayer(playerDt, ps);
 
@@ -222,7 +229,7 @@ function applySignEffect(sign: any, ps: PlayerState) {
     }
 }
 
-function handleEncounters(dt: number, playerX: number, playerY: number, lanePositions: number[], ps: PlayerState) {
+function handleEncounters(dt: number, playerX: number, playerY: number, lanePositions: number[], ps: PlayerState, scale: number) {
     ps.enemies = ps.enemies
         .map((enemy) => {
             const newY = enemy.y + (gameState.speed + enemy.speed) * dt * GAME_CONSTANTS.ENEMY_SPEED_MULTIPLIER;
@@ -239,7 +246,8 @@ function handleEncounters(dt: number, playerX: number, playerY: number, lanePosi
             // Near Miss Logic
             if (!enemy.passed && enemy.y < playerY && newY >= playerY) {
                 const distanceX = Math.abs(playerX - enemyX);
-                if (distanceX < 100) {
+                // Scale near-miss threshold
+                if (distanceX < 100 * scale) {
                     processNearMiss(playerX, playerY, ps);
                 }
                 return { ...enemy, y: newY, passed: true };
@@ -371,7 +379,7 @@ export function addScoreEvent(
     addScoreEventForPlayer(points, type, x, y, gameState.players[0], label, color);
 }
 
-export function getLanePositions(canvasWidth: number): number[] {
+export function getLanePositions(canvasWidth: number): { positions: number[], laneWidth: number } {
     const roadWidth = Math.min(canvasWidth * GAME_CONSTANTS.CANVAS_WIDTH_RATIO, GAME_CONSTANTS.CANVAS_TARGET_WIDTH);
     const roadLeft = (canvasWidth - roadWidth) / 2;
     const laneWidth = roadWidth / GAME_CONSTANTS.LANE_COUNT;
@@ -381,7 +389,7 @@ export function getLanePositions(canvasWidth: number): number[] {
         positions.push(roadLeft + laneWidth * i + laneWidth / 2);
     }
 
-    return positions;
+    return { positions, laneWidth };
 }
 
 /**

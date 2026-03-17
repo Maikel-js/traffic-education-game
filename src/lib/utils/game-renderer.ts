@@ -278,7 +278,7 @@ function renderPlayerView(
   ctx.lineWidth = 6
   ctx.strokeRect(roadLeft, roadTop, roadWidth, roadHeight)
 
-  const lanePositions = getLanePositions(width)
+  const { positions: lanePositions } = getLanePositions(width)
 
   // Draw signs
   for (const sign of ps.signs) {
